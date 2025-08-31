@@ -12,6 +12,7 @@ matplotlib = "^3.10.5"
 numpy = "^2.3.2"
 statsmodels = "^0.14.5"
 requests = "^2.32.5"
+mplfinance = "^0.12.10b0"
 
 
 [build-system]
