@@ -205,17 +205,19 @@ def output_figure_2(mode="value"):
     plt.tight_layout()
     plt.show()
 
-def output_figure_3(step=0.05, mode="value"):
-    # """
-    # 畫 figure_3 的分布與累積曲線
-    # mode="percent" → 右軸顯示累積百分比
-    # mode="value"   → 右軸顯示累積數值
-    # """
+def output_figure_3(step=0.05, mode="value", max_value=5):
+    """
+    畫 figure_3 的分布與累積曲線
+    mode="percent" → 右軸顯示累積百分比
+    mode="value"   → 右軸顯示累積數值
+    """
 
     data = np.asarray(figure_3, dtype=float)
     data = data[~np.isnan(data)]
+    data = data[data <= max_value]
+
     if data.size == 0:
-        print("figure_3 沒有資料")
+        print("figure_3 沒有資料 (<=5)")
         return
 
     # 建立區間邊界
@@ -241,7 +243,7 @@ def output_figure_3(step=0.05, mode="value"):
         right_ylim = (0, 100)
     else:  # 直接數值
         cum_line = cum_value
-        right_ylabel = "累積數點數"
+        right_ylabel = "累積點數"
         right_ylim = (0, cum_value[-1] * 1.05 if cum_value[-1] > 0 else 1)
 
     # --- 畫圖 ---
@@ -270,7 +272,7 @@ def output_figure_3(step=0.05, mode="value"):
     ax1.legend(loc="upper left")
     ax2.legend(loc="lower right")
 
-    plt.title(f"沒想好名子({step:.2f} 區間分箱)(圖三)")
+    plt.title(f"數值分布 (<=5, {step:.2f} 區間分箱)(圖三)")
     plt.tight_layout()
     plt.show()
     # data = np.asarray(figure_3, dtype=float)
