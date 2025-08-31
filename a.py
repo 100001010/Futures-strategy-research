@@ -90,7 +90,7 @@ def output_figure_1(mode="value"):
     handles2, labels2 = ax2.get_legend_handles_labels()
     ax2.legend(handles1 + handles2, labels1 + labels2, loc="upper left")
 
-    plt.title("數值分布 + 正/負分開的累積 (負數取絕對值)")
+    plt.title("勝率(圖一)")
     plt.tight_layout()
     plt.show()
     # count_dict = Counter(figure_1)
@@ -201,7 +201,7 @@ def output_figure_2(mode="value"):
     handles2, labels2 = ax2.get_legend_handles_labels()
     ax2.legend(handles1 + handles2, labels1 + labels2, loc="upper left")
 
-    plt.title("數值分布 + 正/負分開的累積 (負數取絕對值)")
+    plt.title("收盤-開盤(圖二)")
     plt.tight_layout()
     plt.show()
 
@@ -241,7 +241,7 @@ def output_figure_3(step=0.05, mode="value"):
         right_ylim = (0, 100)
     else:  # 直接數值
         cum_line = cum_value
-        right_ylabel = "累積數值"
+        right_ylabel = "累積數點數"
         right_ylim = (0, cum_value[-1] * 1.05 if cum_value[-1] > 0 else 1)
 
     # --- 畫圖 ---
@@ -250,7 +250,7 @@ def output_figure_3(step=0.05, mode="value"):
     # 長條圖 (左 Y 軸: 次數)
     ax1.bar(centers, counts, width=step, align="center",
             color="skyblue", edgecolor="black", label="出現次數")
-    ax1.set_xlabel("數值 (每 %.2f 一區間)" % step)
+    ax1.set_xlabel("點數 (每 %.2f 一區間)" % step)
     ax1.set_ylabel("出現次數", color="blue")
     ax1.tick_params(axis="y", labelcolor="blue")
 
@@ -270,7 +270,7 @@ def output_figure_3(step=0.05, mode="value"):
     ax1.legend(loc="upper left")
     ax2.legend(loc="lower right")
 
-    plt.title(f"數值分布 ({step:.2f} 區間分箱) + {right_ylabel}")
+    plt.title(f"沒想好名子({step:.2f} 區間分箱)(圖三)")
     plt.tight_layout()
     plt.show()
     # data = np.asarray(figure_3, dtype=float)
