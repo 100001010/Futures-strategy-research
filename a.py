@@ -1,0 +1,369 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+from collections import Counter
+import numpy as np
+plt.rcParams["font.family"] = "Microsoft JhengHei"
+plt.rcParams['axes.unicode_minus'] = False
+
+#策略 r21r212 or r21r112 做u
+
+df = pd.read_csv("daily_ohlcv.csv")
+df["Date"] = pd.to_datetime(df["Date"])
+
+def DefualtSet():
+    global trend, go, figure_1, figure_2, figure_3
+    trend = 'r21r212'
+    go = 'u'
+    figure_1 = []
+    figure_2 = []
+    figure_3 = []
+
+def strategy_1_w(df):
+    return df.High-df.Open
+
+def strategy_1_l(df):
+    return df.Low-df.Open
+
+def strategy_2(df):
+    return df.Close-df.Open
+
+def strategy_3(a,b):
+    return a/b
+
+def output_figure_1(mode="value"):
+    # """
+    # mode="value"   → 右軸顯示『直接累加的數值 (正/負分開但皆為正量)』
+    # mode="percent" → 右軸顯示『累加百分比 (0~100%)』
+    # """
+
+    count_dict = Counter(figure_1)
+    x = sorted(count_dict.keys())
+    y = [count_dict[i] for i in x]
+
+    # 分開正數與負數
+    x_pos = sorted([val for val in x if val > 0])
+    y_pos = [count_dict[val] for val in x_pos]
+    x_neg = sorted([val for val in x if val < 0], reverse=True)  # 從 -1, -2 ... 往左
+    y_neg = [count_dict[val] for val in x_neg]
+
+    # 正數累加（照原本算）
+    weighted_pos = np.array(x_pos) * np.array(y_pos) if x_pos else np.array([])
+    cum_pos = np.cumsum(weighted_pos) if weighted_pos.size else np.array([])
+
+    # 負數累加（取絕對值 → 當正量）
+    weighted_neg = np.abs(np.array(x_neg) * np.array(y_neg)) if x_neg else np.array([])
+    cum_neg = np.cumsum(weighted_neg) if weighted_neg.size else np.array([])
+
+    # 模式切換：百分比 or 累加值
+    if mode == "percent":
+        total_w = (weighted_pos.sum() if weighted_pos.size else 0) + (weighted_neg.sum() if weighted_neg.size else 0)
+        if total_w > 0:
+            if cum_pos.size: cum_pos = cum_pos / total_w * 100
+            if cum_neg.size: cum_neg = cum_neg / total_w * 100
+        right_ylabel = "累積百分比 (%)"
+        right_ylim = (0, 100)
+    else:
+        right_ylabel = "累積數值"
+        max_cum = max(cum_pos[-1] if cum_pos.size else 0, cum_neg[-1] if cum_neg.size else 0)
+        right_ylim = (0, max_cum * 1.05 if max_cum > 0 else 1)
+
+    # --- 畫圖 ---
+    fig, ax1 = plt.subplots(figsize=(10,6))
+    ax1.bar(x, y, color="skyblue", edgecolor="black", label="出現次數")
+    ax1.set_xlabel("數值")
+    ax1.set_ylabel("出現次數", color="blue")
+    ax1.tick_params(axis="y", labelcolor="blue")
+
+    # 右軸：累加曲線
+    ax2 = ax1.twinx()
+    if cum_pos.size:
+        ax2.plot(x_pos, cum_pos, color="red", marker="o", linewidth=2, label="正數累積")
+    if cum_neg.size:
+        ax2.plot(x_neg, cum_neg, color="green", marker="s", linewidth=2, label="負數累積(絕對值)")
+
+    ax2.set_ylabel(right_ylabel, color="red")
+    ax2.tick_params(axis="y", labelcolor="red")
+    ax2.set_ylim(*right_ylim)
+
+    # 圖例
+    handles1, labels1 = ax1.get_legend_handles_labels()
+    handles2, labels2 = ax2.get_legend_handles_labels()
+    ax2.legend(handles1 + handles2, labels1 + labels2, loc="upper left")
+
+    plt.title("數值分布 + 正/負分開的累積 (負數取絕對值)")
+    plt.tight_layout()
+    plt.show()
+    # count_dict = Counter(figure_1)
+    # x = sorted(count_dict.keys())
+    # y = [count_dict[i] for i in x]
+
+    # # 分開正數與負數
+    # x_pos = [val for val in x if val > 0]
+    # y_pos = [count_dict[val] for val in x_pos]
+    # x_neg = [val for val in x if val < 0]
+    # y_neg = [count_dict[val] for val in x_neg]
+
+    # # 正數：加權累積百分比 (從小到大)
+    # weighted_pos = np.array(x_pos) * np.array(y_pos)
+
+    # # 負數：加權累積百分比 (從 0 往左，所以要把順序反過來)
+    # weighted_neg = np.abs(np.array(x_neg) * np.array(y_neg))
+    # x_neg_sorted = sorted(x_neg, reverse=True)  # 從 -1, -2, ...往左遞減
+
+    # #百分比
+    # # cum_pos = np.cumsum(weighted_pos) / weighted_pos.sum() * 100 if len(weighted_pos) else []
+    # # cum_neg = np.cumsum(weighted_neg[::-1]) / weighted_neg.sum() * 100 if len(weighted_neg) else []
+    # #數值
+    # cum_pos = np.cumsum(weighted_pos) if len(weighted_pos) else []
+    # cum_neg = np.cumsum(weighted_neg[::-1]) if len(weighted_neg) else []
+
+    # # 畫長條圖
+    # fig, ax1 = plt.subplots(figsize=(10,6))
+    # ax1.bar(x, y, color="skyblue", edgecolor="black")
+    # ax1.set_xlabel("數值")
+    # ax1.set_ylabel("出現次數", color="blue")
+
+    # # 疊加折線圖：正數 (往右)
+    # if len(x_pos):    
+    #     ax2 = ax1.twinx()
+    #     ax2.plot(x_pos, cum_pos, color="red", marker="o", linewidth=2, label="正數累積%")
+    #     ax2.set_ylim(0, 110)
+    #     ax2.set_ylabel("累積百分比 (%)", color="red")
+
+    # # 疊加折線圖：負數 (往左)
+    # if len(x_neg):
+    #     ax2.plot(x_neg_sorted, cum_neg, color="green", marker="s", linewidth=2, label="負數累積%")
+
+    # # 圖例
+    # ax2.legend(loc="lower right")
+
+    # plt.title("數值分布 + 正/負分開的累積百分比")
+    # plt.tight_layout()
+    # plt.show()
+
+def output_figure_2(mode="value"):
+    # """
+    # mode="value"   → 右軸顯示『直接累加的數值 (正/負分開但皆為正量)』
+    # mode="percent" → 右軸顯示『累加百分比 (0~100%)』
+    # """
+
+    count_dict = Counter(figure_2)
+    x = sorted(count_dict.keys())
+    y = [count_dict[i] for i in x]
+
+    # 分開正數與負數
+    x_pos = sorted([val for val in x if val > 0])
+    y_pos = [count_dict[val] for val in x_pos]
+    x_neg = sorted([val for val in x if val < 0], reverse=True)  # 從 -1, -2 ... 往左
+    y_neg = [count_dict[val] for val in x_neg]
+
+    # 正數累加（照原本算）
+    weighted_pos = np.array(x_pos) * np.array(y_pos) if x_pos else np.array([])
+    cum_pos = np.cumsum(weighted_pos) if weighted_pos.size else np.array([])
+
+    # 負數累加（取絕對值 → 當正量）
+    weighted_neg = np.abs(np.array(x_neg) * np.array(y_neg)) if x_neg else np.array([])
+    cum_neg = np.cumsum(weighted_neg) if weighted_neg.size else np.array([])
+
+    # 模式切換：百分比 or 累加值
+    if mode == "percent":
+        total_w = (weighted_pos.sum() if weighted_pos.size else 0) + (weighted_neg.sum() if weighted_neg.size else 0)
+        if total_w > 0:
+            if cum_pos.size: cum_pos = cum_pos / total_w * 100
+            if cum_neg.size: cum_neg = cum_neg / total_w * 100
+        right_ylabel = "累積百分比 (%)"
+        right_ylim = (0, 100)
+    else:
+        right_ylabel = "累積數值"
+        max_cum = max(cum_pos[-1] if cum_pos.size else 0, cum_neg[-1] if cum_neg.size else 0)
+        right_ylim = (0, max_cum * 1.05 if max_cum > 0 else 1)
+
+    # --- 畫圖 ---
+    fig, ax1 = plt.subplots(figsize=(10,6))
+    ax1.bar(x, y, color="skyblue", edgecolor="black", label="出現次數")
+    ax1.set_xlabel("數值")
+    ax1.set_ylabel("出現次數", color="blue")
+    ax1.tick_params(axis="y", labelcolor="blue")
+
+    # 右軸：累加曲線
+    ax2 = ax1.twinx()
+    if cum_pos.size:
+        ax2.plot(x_pos, cum_pos, color="red", marker="o", linewidth=2, label="正數累積")
+    if cum_neg.size:
+        ax2.plot(x_neg, cum_neg, color="green", marker="s", linewidth=2, label="負數累積(絕對值)")
+
+    ax2.set_ylabel(right_ylabel, color="red")
+    ax2.tick_params(axis="y", labelcolor="red")
+    ax2.set_ylim(*right_ylim)
+
+    # 圖例
+    handles1, labels1 = ax1.get_legend_handles_labels()
+    handles2, labels2 = ax2.get_legend_handles_labels()
+    ax2.legend(handles1 + handles2, labels1 + labels2, loc="upper left")
+
+    plt.title("數值分布 + 正/負分開的累積 (負數取絕對值)")
+    plt.tight_layout()
+    plt.show()
+
+def output_figure_3(step=0.05, mode="value"):
+    # """
+    # 畫 figure_3 的分布與累積曲線
+    # mode="percent" → 右軸顯示累積百分比
+    # mode="value"   → 右軸顯示累積數值
+    # """
+
+    data = np.asarray(figure_3, dtype=float)
+    data = data[~np.isnan(data)]
+    if data.size == 0:
+        print("figure_3 沒有資料")
+        return
+
+    # 建立區間邊界
+    max_edge = np.ceil(data.max() / step) * step
+    bins = np.arange(0, max_edge + step, step)
+    if len(bins) < 2:
+        bins = np.array([0, max_edge + step])
+
+    # 用 histogram 統計每區間次數
+    counts, edges = np.histogram(data, bins=bins)
+
+    # 區間中心 (畫長條圖/折線用)
+    centers = (edges[:-1] + edges[1:]) / 2
+
+    # 加權累積值（中心值 × 次數）
+    weighted = centers * counts
+    cum_value = np.cumsum(weighted)
+
+    # --- 模式切換 ---
+    if mode == "percent":
+        cum_line = cum_value / cum_value[-1] * 100 if cum_value[-1] > 0 else np.zeros_like(cum_value)
+        right_ylabel = "累積百分比 (%)"
+        right_ylim = (0, 100)
+    else:  # 直接數值
+        cum_line = cum_value
+        right_ylabel = "累積數值"
+        right_ylim = (0, cum_value[-1] * 1.05 if cum_value[-1] > 0 else 1)
+
+    # --- 畫圖 ---
+    fig, ax1 = plt.subplots(figsize=(10, 6))
+
+    # 長條圖 (左 Y 軸: 次數)
+    ax1.bar(centers, counts, width=step, align="center",
+            color="skyblue", edgecolor="black", label="出現次數")
+    ax1.set_xlabel("數值 (每 %.2f 一區間)" % step)
+    ax1.set_ylabel("出現次數", color="blue")
+    ax1.tick_params(axis="y", labelcolor="blue")
+
+    # 右軸: 累積折線
+    ax2 = ax1.twinx()
+    ax2.plot(centers, cum_line, color="red", marker="o", linewidth=2, label=right_ylabel)
+    ax2.set_ylabel(right_ylabel, color="red")
+    ax2.tick_params(axis="y", labelcolor="red")
+    ax2.set_ylim(*right_ylim)
+
+    # 80% 水平虛線 (只有百分比模式才畫)
+    if mode == "percent":
+        ax2.axhline(80, color="gray", linestyle="--", linewidth=1)
+        ax2.text(centers[-1], 80, "80%", va="bottom", ha="right", color="gray")
+
+    # 圖例
+    ax1.legend(loc="upper left")
+    ax2.legend(loc="lower right")
+
+    plt.title(f"數值分布 ({step:.2f} 區間分箱) + {right_ylabel}")
+    plt.tight_layout()
+    plt.show()
+    # data = np.asarray(figure_3, dtype=float)
+    # data = data[~np.isnan(data)]
+    # if data.size == 0:
+    #     print("figure_3 沒有資料")
+    #     return
+
+    # # 建立區間邊界
+    # max_edge = np.ceil(data.max() / step) * step
+    # bins = np.arange(0, max_edge + step, step)
+
+    # # 用 histogram 統計每區間次數
+    # counts, edges = np.histogram(data, bins=bins)
+
+    # # 區間中心 (畫長條圖/折線用)
+    # centers = (edges[:-1] + edges[1:]) / 2
+
+    # # 加權累積百分比（中心值 × 次數，再正規化到 100%）
+    # weighted = centers * counts
+    # cum_percent = np.cumsum(weighted) / weighted.sum() * 100 if weighted.sum() > 0 else np.zeros_like(weighted)
+
+    # # --- 畫圖 ---
+    # fig, ax1 = plt.subplots(figsize=(10, 6))
+
+    # # 長條圖 (左 Y 軸: 次數)
+    # ax1.bar(centers, counts, width=step, align="center",
+    #         color="skyblue", edgecolor="black", label="出現次數")
+    # ax1.set_xlabel("數值 (每 %.2f 一區間)" % step)
+    # ax1.set_ylabel("出現次數", color="blue")
+    # ax1.tick_params(axis="y", labelcolor="blue")
+
+    # # 右軸: 累積百分比
+    # ax2 = ax1.twinx()
+    # ax2.plot(centers, cum_percent, color="red", marker="o", linewidth=2, label="累積百分比")
+    # ax2.set_ylabel("累積百分比 (%)", color="red")
+    # ax2.tick_params(axis="y", labelcolor="red")
+    # ax2.set_ylim(0, 100)
+
+    # # 80% 水平虛線
+    # ax2.axhline(80, color="gray", linestyle="--", linewidth=1)
+    # ax2.text(centers[-1], 80, "80%", va="bottom", ha="right", color="gray")
+
+    # # 圖例
+    # ax1.legend(loc="upper left")
+    # ax2.legend(loc="lower right")
+
+    # plt.title("數值分布 (%.2f 區間分箱) + 累積百分比" % step)
+    # plt.tight_layout()
+    # plt.show()
+
+def get_name(front,now):
+    name = now.Color
+    if front.Close > now.Open:
+        name+='2'
+    elif front.Close < now.Open:
+        name+='1'
+    if front.Close > now.Close:
+        name+='2'
+    elif front.Close < now.Close:
+        name+='1'
+    return name
+
+def get_last_name(front,now):
+    name = ''
+    if front.Close > now.Open:
+        name+='2'
+    elif front.Close < now.Open:
+        name+='1'
+    return name
+    
+def main():
+    for i in range(1, len(df) - 2):
+        front = df.iloc[i-1]
+        now = df.iloc[i:i+3]
+        name = get_name(front,now.iloc[0])
+        name += get_name(now.iloc[0],now.iloc[1])
+        name += get_last_name(now.iloc[1],now.iloc[2])
+        if name=='r21r212':
+            # if now.iloc[2].漲跌價 >= 0:
+            #     figure_1_w.append(now.iloc[2].漲跌價)
+            # else:
+            #     figure_1_l.append(now.iloc[2].漲跌價)
+            figure_1.append(strategy_1_w(now.iloc[2]))
+            figure_1.append(strategy_1_l(now.iloc[2]))
+            figure_2.append(strategy_2(now.iloc[2]))
+            figure_3.append(abs(strategy_3(figure_1[-2],figure_1[-1])))
+    print(figure_3)
+    output_figure_1()
+    output_figure_2()
+    output_figure_3()
+
+
+if __name__ == '__main__':
+    DefualtSet()
+    main()
