@@ -45,37 +45,38 @@ for name, group in df.groupby('strategy_type'):
 # plt.show()
 
 # 分組後，得到 high-open 的陣列，每十點統計一次畫出長條圖
-bin_size = 10
+bin_size = 0.001
 for name, group in df.groupby('strategy_type'):
-    if name != 'rlhrlhl':
-        continue
-    diff_high_open = group['high'] - group['open']
+    # if name != 'rlhrlhl':
+    #     continue
+    diff_high_open = (group['high'] - group['open'])/ group['open']
     # diff_high_open = diff_high_open.where(group['open'] >= 12000, diff_high_open * 1.5)
-    bins_high_open = ((diff_high_open // bin_size) * bin_size).astype(int)
+    bins_high_open = ((diff_high_open // bin_size) * bin_size)
     counts_high_open = bins_high_open.value_counts().sort_index()
     cumsum_high_open = counts_high_open[::-1].cumsum()
 
-    diff_open_low = group['open'] - group['low']  # 不動
+    diff_open_low = (group['open'] - group['low']) / group['open']  # 不動
     # diff_open_low = diff_open_low.where(group['open'] >= 12000, diff_open_low * 1.5)
-    bins_open_low = ((diff_open_low // bin_size) * bin_size).astype(int)
+    bins_open_low = ((diff_open_low // bin_size) * bin_size)
     counts_open_low = bins_open_low.value_counts().sort_index()
     cumsum_open_low = counts_open_low[::-1].cumsum()
 
-    diff_settlement_open=group['settlement'] - group['open']
+    diff_settlement_open = (group['settlement'] - group['open']) / group['open']
+    print(diff_settlement_open)
     # diff_settlement_open = diff_settlement_open.where(group['open'] >= 12000, diff_settlement_open * 1.5)
     #正負分開
     diff_settlement_open_positive = diff_settlement_open.where(diff_settlement_open > 0, 0)
     diff_settlement_open_negative = diff_settlement_open.where(diff_settlement_open < 0, 0).abs()
 
-    bins_settlement_open_positive = ((diff_settlement_open_positive // bin_size) * bin_size).astype(int)
+    bins_settlement_open_positive = ((diff_settlement_open_positive // bin_size) * bin_size)
     counts_settlement_open_positive = bins_settlement_open_positive.value_counts().sort_index()
     cumsum_settlement_open_positive = counts_settlement_open_positive[::-1].cumsum()
 
-    bins_settlement_open_negative = ((diff_settlement_open_negative // bin_size) * bin_size).astype(int)
+    bins_settlement_open_negative = ((diff_settlement_open_negative // bin_size) * bin_size)
     counts_settlement_open_negative = bins_settlement_open_negative.value_counts().sort_index()
     cumsum_settlement_open_negative = counts_settlement_open_negative[::-1].cumsum()
 
-    fig, (ax1, ax3) = plt.subplots(1, 2, figsize=(18, 7))
+    fig, (ax1, ax3) = plt.subplots(1, 2, figsize=(18, 9))
     ax2 = ax1.twinx()
     ax4 = ax3.twinx()
     # 第一張圖：high-open, open-low
@@ -83,12 +84,12 @@ for name, group in df.groupby('strategy_type'):
     ax1.bar(counts_open_low.index, counts_open_low.values, width=bin_size, color='green', alpha=0.6, label='Open-Low')
     ax1.set_xlabel('Points (每10點一組)')
     ax1.set_ylabel('Count (柱狀圖)', color='black')
-    ax1.set_xlim(0, 300)
+    ax1.set_xlim(0, 0.03)
 
     # High-Open 累加折線圖
-    ax2.plot(cumsum_high_open.index, cumsum_high_open.values, color='green', marker='o', label='High-Open 累加')
+    ax2.plot(cumsum_high_open.index, cumsum_high_open.values, color='red', marker='o', label='High-Open 累加')
     # Open-Low 累加折線圖
-    ax2.plot(cumsum_open_low.index, cumsum_open_low.values, color='red', marker='o', label='Open-Low 累加')
+    ax2.plot(cumsum_open_low.index, cumsum_open_low.values, color='green', marker='o', label='Open-Low 累加')
     ax2.set_ylabel('Cumulative Count (折線圖)', color='black')
     fig.suptitle(f'High-Open & Open-Low Distribution: {name}')
     ax1.legend(loc='upper left')
@@ -99,7 +100,7 @@ for name, group in df.groupby('strategy_type'):
     ax3.bar(counts_settlement_open_negative.index, counts_settlement_open_negative.values, width=bin_size, alpha=0.6, label='Settlement-Open Negative', color='green')
     ax3.set_xlabel('Points (每10點一組)')
     ax3.set_ylabel('Count', color='black')
-    ax3.set_xlim(0, 300)
+    ax3.set_xlim(0, 0.03)
     ax3.legend(loc='upper left')
 
     ax4.plot(cumsum_settlement_open_positive.index, cumsum_settlement_open_positive.values, color='red', marker='o', label='Settlement-Open 累加')
