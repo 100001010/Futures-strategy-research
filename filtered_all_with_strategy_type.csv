@@ -1,4 +1,4 @@
-trade_date,contract,maturity_month_week,open,high,low,close,change,change_pct,volume,settlement,open_interest,best_bid,best_ask,hist_high,hist_low,year,info_pause,session,spread_single_order_volume,k_type,prev_close,o_position,c_position,strategy_type
+trade_date,contract,maturity_month_week,open,high,low,close,change,change_pct,volume,settlement,open_interest,best_bid,best_ask,hist_high,hist_low,year,info_pause,session,spread_single_order_volume,k_type,prev_settlement,o_position,c_position,strategy_type
 1998-07-21,TX,199809,8131,8131,8036,8045,-,-,208.0,8045.0,137,-,-,8131,8036,original,,,,g,,l,l,
 1998-07-22,TX,199809,7950,7950,7820,7870,-175,-2.18%,360.0,7870.0,279,-,-,8131,7820,original,,,,g,8045.0,l,l,
 1998-07-23,TX,199809,7830,7859,7802,7825,-45,-0.57%,190.0,7825.0,357,-,-,8131,7802,original,,,,g,7870.0,l,l,gllglll
