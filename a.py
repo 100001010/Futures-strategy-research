@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from collections import Counter
 import numpy as np
-import os
+from pathlib import Path
 plt.rcParams["font.family"] = "Microsoft JhengHei"
 plt.rcParams['axes.unicode_minus'] = False
 
@@ -19,14 +19,12 @@ plt.rcParams['axes.unicode_minus'] = False
 df = pd.read_csv("filtered_all_with_columns.csv")#daily_ohlcv
 df["Date"] = pd.to_datetime(df["Date"])
 
-def check_floder():
-    if not os.path.exists(folder):
-        os.makedirs(folder)
+def check_folder(folder: Path):
+    folder.mkdir(parents=True, exist_ok=True)
 
 def DefualtSet():
     global trend, go, figure_1, figure_2, figure_3, folder
-    folder = "./strategy_output"
-    check_floder()
+    folder = Path("./strategy_output")
     trend = 'r11r112'
     go = 'u'
     figure_1 = []
@@ -107,7 +105,7 @@ def output_figure_1(name,mode="value"):
 
     plt.title(f"{name}_1")
     plt.tight_layout()
-    plt.show()
+    plt.savefig(f"{folder}/{name}_1.png", dpi=300)
     # count_dict = Counter(figure_1)
     # x = sorted(count_dict.keys())
     # y = [count_dict[i] for i in x]
@@ -218,7 +216,7 @@ def output_figure_2(name, mode="value"):
 
     plt.title(f"{name}_2")
     plt.tight_layout()
-    plt.show()
+    plt.savefig(f"{folder}/{name}_2.png", dpi=300)
 
 def output_figure_3(name, step=0.1, mode="value", max_value=5):
     """
@@ -289,7 +287,7 @@ def output_figure_3(name, step=0.1, mode="value", max_value=5):
 
     plt.title(f"{name}_3 數值分布 (<=5, {step:.2f} 區間分箱)")
     plt.tight_layout()
-    plt.show()
+    plt.savefig(f"{folder}/{name}_3.png", dpi=300)
     # data = np.asarray(figure_3, dtype=float)
     # data = data[~np.isnan(data)]
     # if data.size == 0:
@@ -376,13 +374,14 @@ def output_all_strategy():
     a.to_csv("all_strategy_count.csv",index=False,encoding="utf-8-sig")
     
 def main():
+    global folder
     for i in range(1, len(df) - 2):
         front = df.iloc[i-1]
         now = df.iloc[i:i+3]
         name = get_name(front,now.iloc[0])
         name += get_name(now.iloc[0],now.iloc[1])
         name += get_last_name(now.iloc[1],now.iloc[2])
-        if name=='r21r212':
+        if name==trend:
             # if now.iloc[2].漲跌價 >= 0:
             #     figure_1_w.append(now.iloc[2].漲跌價)
             # else:
@@ -392,12 +391,14 @@ def main():
             figure_2.append(strategy_2(now.iloc[2]))
             figure_3.append(abs(strategy_3(figure_1[-2],figure_1[-1])))
     print(figure_3)
-    output_figure_1(name)
-    output_figure_2(name)
-    output_figure_3(name)
+    folder = Path(f"{folder}/{trend}")
+    check_folder(folder)
+    output_figure_1(trend)
+    output_figure_2(trend)
+    output_figure_3(trend)
 
 
 if __name__ == '__main__':
     DefualtSet()
-    output_all_strategy()
-    # main()
+    # output_all_strategy()
+    main()
