@@ -248,69 +248,6 @@ def output_figure_1(name,bin_size = 10,mode="value",accumulation_mode=""):
     #     plt.tight_layout()
     #     plt.savefig(f"{folder}/{name}_1.png", dpi=300)
 
-    # """
-    # mode="value"   → 右軸顯示『直接累加的數值 (正/負分開但皆為正量)』
-    # mode="percent" → 右軸顯示『累加百分比 (0~100%)』
-    # """
-
-    # count_dict = Counter(figure_1)
-    # x = sorted(count_dict.keys())
-    # y = [count_dict[i] for i in x]
-
-    # # 分開正數與負數
-    # x_pos = sorted([val for val in x if val > 0])
-    # y_pos = [count_dict[val] for val in x_pos]
-    # x_neg = sorted([val for val in x if val < 0], reverse=True)  # 從 -1, -2 ... 往左
-    # y_neg = [count_dict[val] for val in x_neg]
-
-    # # 正數累加（照原本算）
-    # weighted_pos = np.array(x_pos) * np.array(y_pos) if x_pos else np.array([])
-    # cum_pos = np.cumsum(weighted_pos) if weighted_pos.size else np.array([])
-
-    # # 負數累加（取絕對值 → 當正量）
-    # weighted_neg = np.abs(np.array(x_neg) * np.array(y_neg)) if x_neg else np.array([])
-    # cum_neg = np.cumsum(weighted_neg) if weighted_neg.size else np.array([])
-
-    # # 模式切換：百分比 or 累加值
-    # if mode == "percent":
-    #     total_w = (weighted_pos.sum() if weighted_pos.size else 0) + (weighted_neg.sum() if weighted_neg.size else 0)
-    #     if total_w > 0:
-    #         if cum_pos.size: cum_pos = cum_pos / total_w * 100
-    #         if cum_neg.size: cum_neg = cum_neg / total_w * 100
-    #     right_ylabel = "累積百分比 (%)"
-    #     right_ylim = (0, 100)
-    # else:
-    #     right_ylabel = "累積數值"
-    #     max_cum = max(cum_pos[-1] if cum_pos.size else 0, cum_neg[-1] if cum_neg.size else 0)
-    #     right_ylim = (0, max_cum * 1.05 if max_cum > 0 else 1)
-
-    # # --- 畫圖 ---
-    # fig, ax1 = plt.subplots(figsize=(10,6))
-    # ax1.bar(x, y, color="skyblue", edgecolor="black", label="出現次數")
-    # ax1.set_xlabel("數值")
-    # ax1.set_ylabel("出現次數", color="blue")
-    # ax1.tick_params(axis="y", labelcolor="blue")
-
-    # # 右軸：累加曲線
-    # ax2 = ax1.twinx()
-    # if cum_pos.size:
-    #     ax2.plot(x_pos, cum_pos, color="red", marker="o", linewidth=2, label="正數累積")
-    # if cum_neg.size:
-    #     ax2.plot(x_neg, cum_neg, color="green", marker="s", linewidth=2, label="負數累積(絕對值)")
-
-    # ax2.set_ylabel(right_ylabel, color="red")
-    # ax2.tick_params(axis="y", labelcolor="red")
-    # ax2.set_ylim(*right_ylim)
-
-    # # 圖例
-    # handles1, labels1 = ax1.get_legend_handles_labels()
-    # handles2, labels2 = ax2.get_legend_handles_labels()
-    # ax2.legend(handles1 + handles2, labels1 + labels2, loc="upper left")
-
-    # plt.title(f"{name}_1")
-    # plt.tight_layout()
-    # plt.savefig(f"{folder}/{name}_1.png", dpi=300)
-
 def output_figure_2(name, bin_size = 10, mode="value", accumulation_mode=""):
     bins = bin_values(figure_2, bin_size=bin_size, mode="toward_zero")
     cnt = Counter(bins)
