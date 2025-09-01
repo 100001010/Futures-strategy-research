@@ -5,14 +5,22 @@ import numpy as np
 plt.rcParams["font.family"] = "Microsoft JhengHei"
 plt.rcParams['axes.unicode_minus'] = False
 
-#策略 r21r212 or r21r112 做u
+#策略 r21r212(34) or r21r112(90) 做u
+#1.所有策略(O)
+#2.時間列出來
+#3.名子r21r212u(d)_1...(O)
+#4.做r11r112u(最少42次)
+#5.收盤價用結算價
+#6.當天收盤價小於12000,開盤結算都乘1.5
+#7.x改成%(最高價-開盤價)/開盤價(後做)
+#8.1,2張圖改一個區間10
 
 df = pd.read_csv("daily_ohlcv.csv")
 df["Date"] = pd.to_datetime(df["Date"])
 
 def DefualtSet():
     global trend, go, figure_1, figure_2, figure_3
-    trend = 'r21r212'
+    trend = 'r11r112'
     go = 'u'
     figure_1 = []
     figure_2 = []
@@ -30,7 +38,7 @@ def strategy_2(df):
 def strategy_3(a,b):
     return a/b
 
-def output_figure_1(mode="value"):
+def output_figure_1(name,mode="value"):
     # """
     # mode="value"   → 右軸顯示『直接累加的數值 (正/負分開但皆為正量)』
     # mode="percent" → 右軸顯示『累加百分比 (0~100%)』
@@ -90,7 +98,7 @@ def output_figure_1(mode="value"):
     handles2, labels2 = ax2.get_legend_handles_labels()
     ax2.legend(handles1 + handles2, labels1 + labels2, loc="upper left")
 
-    plt.title("勝率(圖一)")
+    plt.title(f"{name}_1")
     plt.tight_layout()
     plt.show()
     # count_dict = Counter(figure_1)
@@ -141,7 +149,7 @@ def output_figure_1(mode="value"):
     # plt.tight_layout()
     # plt.show()
 
-def output_figure_2(mode="value"):
+def output_figure_2(name, mode="value"):
     # """
     # mode="value"   → 右軸顯示『直接累加的數值 (正/負分開但皆為正量)』
     # mode="percent" → 右軸顯示『累加百分比 (0~100%)』
@@ -201,11 +209,11 @@ def output_figure_2(mode="value"):
     handles2, labels2 = ax2.get_legend_handles_labels()
     ax2.legend(handles1 + handles2, labels1 + labels2, loc="upper left")
 
-    plt.title("收盤-開盤(圖二)")
+    plt.title(f"{name}_2")
     plt.tight_layout()
     plt.show()
 
-def output_figure_3(step=0.05, mode="value", max_value=5):
+def output_figure_3(name, step=0.1, mode="value", max_value=5):
     """
     畫 figure_3 的分布與累積曲線
     mode="percent" → 右軸顯示累積百分比
@@ -272,7 +280,7 @@ def output_figure_3(step=0.05, mode="value", max_value=5):
     ax1.legend(loc="upper left")
     ax2.legend(loc="lower right")
 
-    plt.title(f"數值分布 (<=5, {step:.2f} 區間分箱)(圖三)")
+    plt.title(f"{name}_3 數值分布 (<=5, {step:.2f} 區間分箱)")
     plt.tight_layout()
     plt.show()
     # data = np.asarray(figure_3, dtype=float)
@@ -343,6 +351,22 @@ def get_last_name(front,now):
     elif front.Close < now.Open:
         name+='1'
     return name
+
+def output_all_strategy():
+    all_data = {}
+    print(len(df) - 2)
+    for i in range(1, len(df) - 2):
+        front = df.iloc[i-1]
+        now = df.iloc[i:i+3]
+        name = get_name(front,now.iloc[0])
+        name += get_name(now.iloc[0],now.iloc[1])
+        name += get_last_name(now.iloc[1],now.iloc[2])
+        try:
+            all_data[name] += 1
+        except:
+            all_data[name] = 1
+    a = pd.DataFrame(list(all_data.items()), columns=["strategy", "count"])
+    a.to_csv("all_strategy_count.csv",index=False,encoding="utf-8-sig")
     
 def main():
     for i in range(1, len(df) - 2):
@@ -361,11 +385,12 @@ def main():
             figure_2.append(strategy_2(now.iloc[2]))
             figure_3.append(abs(strategy_3(figure_1[-2],figure_1[-1])))
     print(figure_3)
-    output_figure_1()
-    output_figure_2()
-    output_figure_3()
+    output_figure_1(name)
+    output_figure_2(name)
+    output_figure_3(name)
 
 
 if __name__ == '__main__':
     DefualtSet()
-    main()
+    output_all_strategy()
+    # main()
