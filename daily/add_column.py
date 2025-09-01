@@ -14,13 +14,13 @@
 import pandas as pd
 
 df = pd.read_csv("filtered_all.csv")
-df['k_type'] = df.apply(lambda row: 'r' if row['結算價'] >= row['開盤價'] else 'g', axis=1)\
+df['k_type'] = df.apply(lambda row: 'r' if row['settlement'] >= row['open'] else 'g', axis=1)
 
 # 欄位裡沒有昨日結算價
 for i in range(1, len(df)):
-    df.at[i, '昨日結算價'] = df.at[i-1, '結算價']
+    df.at[i, 'prev_close'] = df.at[i-1, 'settlement']
 
-df['o_position'] = df.apply(lambda row: 'h' if row['開盤價'] >= row['昨日結算價'] else 'l', axis=1)
-df['c_position'] = df.apply(lambda row: 'h' if row['結算價'] >= row['昨日結算價'] else 'l', axis=1)
+df['o_position'] = df.apply(lambda row: 'h' if row['open'] >= row['prev_close'] else 'l', axis=1)
+df['c_position'] = df.apply(lambda row: 'h' if row['settlement'] >= row['prev_close'] else 'l', axis=1)
 
 df.to_csv("filtered_all_with_columns.csv", index=False)

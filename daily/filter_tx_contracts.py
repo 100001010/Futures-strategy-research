@@ -32,7 +32,33 @@ if all_filtered:
 
     # 排序（如果有交易日期欄位）
     if "交易日期" in final_data.columns:
+        final_data["交易日期"] = pd.to_datetime(final_data["交易日期"], errors="coerce")
         final_data = final_data.sort_values(by="交易日期").reset_index(drop=True)
+
+        # 欄位名中翻英
+        column_mapping = {
+            "交易日期": "trade_date",
+            "契約": "contract",
+            "到期月份(週別)": "maturity_month_week",
+            "開盤價": "open",
+            "最高價": "high",
+            "最低價": "low",
+            "收盤價": "close",
+            "漲跌價": "change",
+            "漲跌%": "change_pct",
+            "成交量": "volume",
+            "結算價": "settlement",
+            "未沖銷契約數": "open_interest",
+            "最後最佳買價": "best_bid",
+            "最後最佳賣價": "best_ask",
+            "歷史最高價": "hist_high",
+            "歷史最低價": "hist_low",
+            "年份": "year",
+            "是否因訊息面暫停交易": "info_pause",
+            "交易時段": "session",
+            "價差對單式委託成交量": "spread_single_order_volume"
+        }
+        final_data = final_data.rename(columns=column_mapping)
 
     # 存成一份 CSV
     final_data.to_csv("filtered_all.csv", index=False, encoding="utf-8-sig")
