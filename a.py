@@ -8,13 +8,13 @@ plt.rcParams['axes.unicode_minus'] = False
 
 #策略 r21r212(34) or r21r112(90) 做u
 #1.所有策略(O)
-#2.時間列出來
+#2.時間列出來(O)
 #3.名子r21r212u(d)_1...(O)
 #4.做r11r112u(最少42次)
 #5.收盤價用結算價(O)
 #6.當天結算價小於12000,開盤價結算價都乘1.5 (OX)//但最高價最低價也乘1.5
 #7.x改成%(最高價-開盤價)/開盤價(後做)
-#8.1,2張圖改一個區間10
+#8.1,2張圖改一個區間10(O)
 
 df = pd.read_csv("filtered_all_with_columns.csv")#daily_ohlcv
 df["Date"] = pd.to_datetime(df["Date"])
@@ -572,6 +572,18 @@ def output_all_strategy():
             all_data[name] = 1
     a = pd.DataFrame(list(all_data.items()), columns=["strategy", "count"])
     a.to_csv("all_strategy_count.csv",index=False,encoding="utf-8-sig")
+
+def output_strategy_year():
+    year = []
+    for i in range(1, len(df) - 2):
+        front = df.iloc[i-1]
+        now = df.iloc[i:i+3]
+        name = get_name(front,now.iloc[0])
+        name += get_name(now.iloc[0],now.iloc[1])
+        name += get_last_name(now.iloc[1],now.iloc[2])
+        if name==trend :
+            year.append(now.iloc[2].Date.strftime("%Y-%m-%d"))
+    print(year)
     
 def main():
     global folder
@@ -606,5 +618,6 @@ def main():
 
 if __name__ == '__main__':
     DefualtSet()
+    output_strategy_year()
     # output_all_strategy()
-    main()
+    # main()
