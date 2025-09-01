@@ -10,12 +10,12 @@ plt.rcParams['axes.unicode_minus'] = False
 #2.時間列出來
 #3.名子r21r212u(d)_1...(O)
 #4.做r11r112u(最少42次)
-#5.收盤價用結算價
+#5.收盤價用結算價(O)
 #6.當天收盤價小於12000,開盤結算都乘1.5
 #7.x改成%(最高價-開盤價)/開盤價(後做)
 #8.1,2張圖改一個區間10
 
-df = pd.read_csv("daily_ohlcv.csv")
+df = pd.read_csv("filtered_all_with_columns.csv")#daily_ohlcv
 df["Date"] = pd.to_datetime(df["Date"])
 
 def DefualtSet():
@@ -33,7 +33,7 @@ def strategy_1_l(df):
     return df.Low-df.Open
 
 def strategy_2(df):
-    return df.Close-df.Open
+    return df.settle-df.Open
 
 def strategy_3(a,b):
     return a/b
@@ -334,21 +334,21 @@ def output_figure_3(name, step=0.1, mode="value", max_value=5):
 
 def get_name(front,now):
     name = now.Color
-    if front.Close > now.Open:
+    if front.settle > now.Open:
         name+='2'
-    elif front.Close < now.Open:
+    elif front.settle < now.Open:
         name+='1'
-    if front.Close > now.Close:
+    if front.settle > now.settle:
         name+='2'
-    elif front.Close < now.Close:
+    elif front.settle < now.settle:
         name+='1'
     return name
 
 def get_last_name(front,now):
     name = ''
-    if front.Close > now.Open:
+    if front.settle > now.Open:
         name+='2'
-    elif front.Close < now.Open:
+    elif front.settle < now.Open:
         name+='1'
     return name
 
