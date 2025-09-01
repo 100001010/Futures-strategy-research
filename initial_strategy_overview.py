@@ -6,11 +6,11 @@ print(data.columns)
 print(len(data))
 
 # 建立strategy_type
-c2 = data["Color"].shift(2)       # index-2
+c2 = data["k_type"].shift(2)       # index-2
 o2 = data["o_position"].shift(2)
 p2 = data["c_position"].shift(2)
 
-c1 = data["Color"].shift(1)       # index-1
+c1 = data["k_type"].shift(1)       # index-1
 o1 = data["o_position"].shift(1)
 p1 = data["c_position"].shift(1)
 
