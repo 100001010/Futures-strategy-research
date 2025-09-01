@@ -312,192 +312,66 @@ def output_figure_1(name,bin_size = 10,mode="value",accumulation_mode=""):
     # plt.savefig(f"{folder}/{name}_1.png", dpi=300)
 
 def output_figure_2(name, bin_size = 10, mode="value", accumulation_mode=""):
+    bins = bin_values(figure_2, bin_size=bin_size, mode="toward_zero")
+    cnt = Counter(bins)
+    # 左邊界（edge）與高度
+    left_edges = np.array(sorted(cnt.keys()), dtype=float)
+    heights    = np.array([cnt[k] for k in left_edges], dtype=float)
 
-    if accumulation_mode == "detail":
-        raw_cnt = Counter(figure_2)
-        raw_x = sorted(raw_cnt.keys())
-        raw_x_pos = [v for v in raw_x if v > 0]
-        raw_y_pos = [raw_cnt[v] for v in raw_x_pos]
-        raw_x_neg = sorted([v for v in raw_x if v < 0], reverse=True)
-        raw_y_neg = [raw_cnt[v] for v in raw_x_neg]
+    # 2) 累加曲線（用原始值 × 次數；負邊取絕對值）
+    #    這裡用原始值而不是分箱值，依你之前的需求
+    raw_cnt = Counter(np.asarray(figure_2, dtype=float))
+    xs = sorted(raw_cnt.keys())
+    x_pos = [v for v in xs if v > 0]
+    y_pos = [raw_cnt[v] for v in x_pos]
+    x_neg = sorted([v for v in xs if v < 0], reverse=True)
+    y_neg = [raw_cnt[v] for v in x_neg]
 
-        # 正邊累加（原始值 × 次數）
-        w_pos = np.array(raw_x_pos, float) * np.array(raw_y_pos, float) if raw_x_pos else np.array([])
-        cum_pos = np.cumsum(w_pos) if w_pos.size else np.array([])
+    w_pos = np.array(x_pos) * np.array(y_pos) if x_pos else np.array([])
+    w_neg = np.abs(np.array(x_neg)) * np.array(y_neg) if x_neg else np.array([])
 
-        # 負邊累加（|原始值| × 次數，作為正量）
-        w_neg_abs = np.abs(np.array(raw_x_neg, float)) * np.array(raw_y_neg, float) if raw_x_neg else np.array([])
-        cum_neg = np.cumsum(w_neg_abs) if w_neg_abs.size else np.array([])
+    cum_pos = np.cumsum(w_pos) if w_pos.size else np.array([])
+    cum_neg = np.cumsum(w_neg) if w_neg.size else np.array([])
 
-        # 模式切換（右軸）
-        if mode == "percent":
-            total_w = (w_pos.sum() if w_pos.size else 0.0) + (w_neg_abs.sum() if w_neg_abs.size else 0.0)
-            if total_w > 0:
-                if cum_pos.size: cum_pos = cum_pos / total_w * 100.0
-                if cum_neg.size: cum_neg = cum_neg / total_w * 100.0
-            right_ylabel = "累積百分比 (%)"
-            right_ylim = (0, 100)
-        else:
-            right_ylabel = "累積數值"
-            max_c = max(float(cum_pos[-1]) if cum_pos.size else 0.0,
-                        float(cum_neg[-1]) if cum_neg.size else 0.0)
-            right_ylim = (0, max_c * 1.05 if max_c > 0 else 1)
-
-        # ---------- 2) 柱狀圖資料：每 bin_size 分箱 ----------
-        binned = [(int(v) // bin_size) * bin_size for v in figure_2]  # 12→10, 19→10, 27→20...
-        bin_cnt = Counter(binned)
-        bin_x = sorted(bin_cnt.keys())
-        bin_y = [bin_cnt[v] for v in bin_x]
-
-        # ---------- 3) 畫圖 ----------
-        fig, ax1 = plt.subplots(figsize=(10, 6))
-        ax1.bar(bin_x, bin_y, width=10, color="skyblue", edgecolor="black", label="出現次數（每10分箱）")
-        ax1.set_xlabel("數值（每 10 為一區間）")
-        ax1.set_ylabel("出現次數", color="blue")
-        ax1.tick_params(axis="y", labelcolor="blue")
-
-        ax2 = ax1.twinx()
-        if cum_pos.size:
-            ax2.plot(raw_x_pos, cum_pos, color="red", marker="o", linewidth=2, label="正數累積（原始值）")
-        if cum_neg.size:
-            ax2.plot(raw_x_neg, cum_neg, color="green", marker="s", linewidth=2, label="負數累積（原始值|x|）")
-
-        ax2.set_ylabel(right_ylabel, color="red")
-        ax2.tick_params(axis="y", labelcolor="red")
-        ax2.set_ylim(*right_ylim)
-
-        # 圖例（合併左右軸）
-        h1, l1 = ax1.get_legend_handles_labels()
-        h2, l2 = ax2.get_legend_handles_labels()
-        ax2.legend(h1 + h2, l1 + l2, loc="upper left")
-
-        plt.title(f"{name}_2（柱：每{bin_size}分箱；線：原始值累積）")
-        plt.tight_layout()
-        plt.savefig(f"{folder}/{name}_2.png", dpi=300)
+    if mode == "percent":
+        total = (w_pos.sum() if w_pos.size else 0.0) + (w_neg.sum() if w_neg.size else 0.0)
+        if total > 0:
+            if cum_pos.size: cum_pos = cum_pos / total * 100
+            if cum_neg.size: cum_neg = cum_neg / total * 100
+        right_ylabel = "累積百分比 (%)"
+        right_ylim = (0, 100)
     else:
-        # 把數值歸到每 bin_size 一個區間
-        binned = [(val // bin_size) * bin_size for val in figure_2]
-        count_dict = Counter(binned)
+        right_ylabel = "累積數值"
+        max_c = max(float(cum_pos[-1]) if cum_pos.size else 0.0,
+                    float(cum_neg[-1]) if cum_neg.size else 0.0)
+        right_ylim = (0, max_c * 1.05 if max_c > 0 else 1)
 
-        x = sorted(count_dict.keys())
-        y = [count_dict[i] for i in x]
+    # 3) 畫圖（用左邊界 + align='edge'）
+    fig, ax1 = plt.subplots(figsize=(10, 6))
+    ax1.bar(left_edges, heights, width=bin_size, align='edge',
+            color="skyblue", edgecolor="black", label="出現次數")
+    ax1.set_xlabel(f"數值 (每 {bin_size} 區間)")
+    ax1.set_ylabel("出現次數", color="blue")
+    ax1.tick_params(axis="y", labelcolor="blue")
 
-        # 分開正數與負數
-        x_pos = sorted([val for val in x if val > 0])
-        y_pos = [count_dict[val] for val in x_pos]
-        x_neg = sorted([val for val in x if val < 0], reverse=True)
-        y_neg = [count_dict[val] for val in x_neg]
+    ax2 = ax1.twinx()
+    if cum_pos.size:
+        ax2.plot(x_pos, cum_pos, color="red", marker="o", linewidth=2, label="正數累積")
+    if cum_neg.size:
+        ax2.plot(x_neg, cum_neg, color="green", marker="s", linewidth=2, label="負數累積(絕對值)")
 
-        # 正數累加
-        weighted_pos = np.array(x_pos) * np.array(y_pos) if x_pos else np.array([])
-        cum_pos = np.cumsum(weighted_pos) if weighted_pos.size else np.array([])
+    ax2.set_ylabel(right_ylabel, color="red")
+    ax2.tick_params(axis="y", labelcolor="red")
+    ax2.set_ylim(*right_ylim)
 
-        # 負數累加（絕對值）
-        weighted_neg = np.abs(np.array(x_neg) * np.array(y_neg)) if x_neg else np.array([])
-        cum_neg = np.cumsum(weighted_neg) if weighted_neg.size else np.array([])
+    h1, l1 = ax1.get_legend_handles_labels()
+    h2, l2 = ax2.get_legend_handles_labels()
+    ax2.legend(h1 + h2, l1 + l2, loc="upper left")
 
-        # 模式切換
-        if mode == "percent":
-            total_w = (weighted_pos.sum() if weighted_pos.size else 0) + (weighted_neg.sum() if weighted_neg.size else 0)
-            if total_w > 0:
-                if cum_pos.size: cum_pos = cum_pos / total_w * 100
-                if cum_neg.size: cum_neg = cum_neg / total_w * 100
-            right_ylabel = "累積百分比 (%)"
-            right_ylim = (0, 100)
-        else:
-            right_ylabel = "累積數值"
-            max_cum = max(cum_pos[-1] if cum_pos.size else 0, cum_neg[-1] if cum_neg.size else 0)
-            right_ylim = (0, max_cum * 1.05 if max_cum > 0 else 1)
-
-        # --- 畫圖 ---
-        fig, ax1 = plt.subplots(figsize=(10,6))
-        ax1.bar(x, y, width=10, color="skyblue", edgecolor="black", label="出現次數")  # ★ width=10
-        ax1.set_xlabel(f"數值 (每 {bin_size} 區間)")
-        ax1.set_ylabel("出現次數", color="blue")
-        ax1.tick_params(axis="y", labelcolor="blue")
-
-        # 右軸：累加曲線
-        ax2 = ax1.twinx()
-        if cum_pos.size:
-            ax2.plot(x_pos, cum_pos, color="red", marker="o", linewidth=2, label="正數累積")
-        if cum_neg.size:
-            ax2.plot(x_neg, cum_neg, color="green", marker="s", linewidth=2, label="負數累積(絕對值)")
-
-        ax2.set_ylabel(right_ylabel, color="red")
-        ax2.tick_params(axis="y", labelcolor="red")
-        ax2.set_ylim(*right_ylim)
-
-        # 圖例
-        handles1, labels1 = ax1.get_legend_handles_labels()
-        handles2, labels2 = ax2.get_legend_handles_labels()
-        ax2.legend(handles1 + handles2, labels1 + labels2, loc="upper left")
-
-        plt.title(f"{name}_2 (每 10 區間)")
-        plt.tight_layout()
-        plt.savefig(f"{folder}/{name}_2.png", dpi=300)
-
-    # """
-    # mode="value"   → 右軸顯示『直接累加的數值 (正/負分開但皆為正量)』
-    # mode="percent" → 右軸顯示『累加百分比 (0~100%)』
-    # """
-
-    # count_dict = Counter(figure_2)
-    # x = sorted(count_dict.keys())
-    # y = [count_dict[i] for i in x]
-
-    # # 分開正數與負數
-    # x_pos = sorted([val for val in x if val > 0])
-    # y_pos = [count_dict[val] for val in x_pos]
-    # x_neg = sorted([val for val in x if val < 0], reverse=True)  # 從 -1, -2 ... 往左
-    # y_neg = [count_dict[val] for val in x_neg]
-
-    # # 正數累加（照原本算）
-    # weighted_pos = np.array(x_pos) * np.array(y_pos) if x_pos else np.array([])
-    # cum_pos = np.cumsum(weighted_pos) if weighted_pos.size else np.array([])
-
-    # # 負數累加（取絕對值 → 當正量）
-    # weighted_neg = np.abs(np.array(x_neg) * np.array(y_neg)) if x_neg else np.array([])
-    # cum_neg = np.cumsum(weighted_neg) if weighted_neg.size else np.array([])
-
-    # # 模式切換：百分比 or 累加值
-    # if mode == "percent":
-    #     total_w = (weighted_pos.sum() if weighted_pos.size else 0) + (weighted_neg.sum() if weighted_neg.size else 0)
-    #     if total_w > 0:
-    #         if cum_pos.size: cum_pos = cum_pos / total_w * 100
-    #         if cum_neg.size: cum_neg = cum_neg / total_w * 100
-    #     right_ylabel = "累積百分比 (%)"
-    #     right_ylim = (0, 100)
-    # else:
-    #     right_ylabel = "累積數值"
-    #     max_cum = max(cum_pos[-1] if cum_pos.size else 0, cum_neg[-1] if cum_neg.size else 0)
-    #     right_ylim = (0, max_cum * 1.05 if max_cum > 0 else 1)
-
-    # # --- 畫圖 ---
-    # fig, ax1 = plt.subplots(figsize=(10,6))
-    # ax1.bar(x, y, color="skyblue", edgecolor="black", label="出現次數")
-    # ax1.set_xlabel("數值")
-    # ax1.set_ylabel("出現次數", color="blue")
-    # ax1.tick_params(axis="y", labelcolor="blue")
-
-    # # 右軸：累加曲線
-    # ax2 = ax1.twinx()
-    # if cum_pos.size:
-    #     ax2.plot(x_pos, cum_pos, color="red", marker="o", linewidth=2, label="正數累積")
-    # if cum_neg.size:
-    #     ax2.plot(x_neg, cum_neg, color="green", marker="s", linewidth=2, label="負數累積(絕對值)")
-
-    # ax2.set_ylabel(right_ylabel, color="red")
-    # ax2.tick_params(axis="y", labelcolor="red")
-    # ax2.set_ylim(*right_ylim)
-
-    # # 圖例
-    # handles1, labels1 = ax1.get_legend_handles_labels()
-    # handles2, labels2 = ax2.get_legend_handles_labels()
-    # ax2.legend(handles1 + handles2, labels1 + labels2, loc="upper left")
-
-    # plt.title(f"{name}_2")
-    # plt.tight_layout()
-    # plt.savefig(f"{folder}/{name}_2.png", dpi=300)
+    plt.title(name or f"每 {bin_size} 區間")
+    plt.tight_layout()
+    plt.savefig(f"{folder}/{name}_2.png", dpi=300)
+    plt.close(fig)  # 如果在迴圈內畫多張圖，記得關掉避免疊圖
 
 def output_figure_3(name, step=0.1, mode="value", max_value=5):
     """
@@ -693,7 +567,7 @@ def main():
     folder = Path(f"{folder}/{trend}")
     check_folder()
     output_figure_1(trend,0.005)
-    output_figure_2(trend)
+    output_figure_2(trend,0.005)
     output_figure_3(trend)
 
 
