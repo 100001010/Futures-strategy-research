@@ -13,7 +13,7 @@ plt.rcParams['axes.unicode_minus'] = False
 #4.做r11r112u(最少42次)
 #5.收盤價用結算價(O)
 #6.當天結算價小於12000,開盤價結算價都乘1.5 (OX)//但最高價最低價也乘1.5
-#7.x改成%(最高價-開盤價)/開盤價(後做)
+#7.x改成%(最高價-開盤價)/開盤價(後做) (OX)//數值太小要討論
 #8.1,2張圖改一個區間10(O)
 
 df = pd.read_csv("filtered_all_with_columns.csv")#daily_ohlcv
@@ -31,19 +31,100 @@ def DefualtSet():
 def check_folder():
     folder.mkdir(parents=True, exist_ok=True)
 
-def strategy_1_w(df):
-    return (df.High-df.Open)*1.5 if df.settle <12000 else df.High-df.Open
+def strategy_1_w(df, mode="value"):
+    if mode == "value":
+        return (df.High-df.Open)*1.5 if df.settle <12000 else df.High-df.Open
+    return (df.High-df.Open)/df.Open
 
-def strategy_1_l(df):
-    return (df.Low-df.Open)*1.5 if df.settle <12000 else df.Low-df.Open
+def strategy_1_l(df, mode="value"):
+    if mode == "value":
+        return (df.Low-df.Open)*1.5 if df.settle <12000 else df.Low-df.Open
+    return (df.Low-df.Open)/df.Open
 
-def strategy_2(df):
-    return (df.settle-df.Open)*1.5 if df.settle <12000 else df.settle-df.Open
+def strategy_2(df, mode="value"):
+    if mode == "value":
+        return (df.settle-df.Open)*1.5 if df.settle <12000 else df.settle-df.Open
+    return (df.settle-df.Open)/df.Open
 
 def strategy_3(a,b):
     return a/b
 
-def output_figure_1(name,mode="value",bin_size = 10,accumulation_mode=""):
+def bin_values(arr, bin_size=0.01, mode="toward_zero"):
+    arr = np.asarray(arr, dtype=float)
+    if mode == "toward_zero":
+        bins = np.where(arr >= 0,
+                        np.floor(arr / bin_size),
+                        np.ceil(arr / bin_size)) * bin_size
+    elif mode == "floor":
+        bins = np.floor(arr / bin_size) * bin_size
+    else:
+        raise ValueError("mode must be 'toward_zero' or 'floor'")
+    # 把 -0.0 正規成 0.0（但不要轉 int！）
+    bins = np.where(np.isclose(bins, 0.0), 0.0, bins)
+    return bins
+
+def output_figure_1(name,bin_size = 10,mode="value",accumulation_mode=""):
+    # bins = bin_values(figure_1, bin_size=bin_size, mode="toward_zero")
+    # cnt = Counter(bins)
+    # # 左邊界（edge）與高度
+    # left_edges = np.array(sorted(cnt.keys()), dtype=float)
+    # heights    = np.array([cnt[k] for k in left_edges], dtype=float)
+
+    # # 2) 累加曲線（用原始值 × 次數；負邊取絕對值）
+    # #    這裡用原始值而不是分箱值，依你之前的需求
+    # raw_cnt = Counter(np.asarray(figure_1, dtype=float))
+    # xs = sorted(raw_cnt.keys())
+    # x_pos = [v for v in xs if v > 0]
+    # y_pos = [raw_cnt[v] for v in x_pos]
+    # x_neg = sorted([v for v in xs if v < 0], reverse=True)
+    # y_neg = [raw_cnt[v] for v in x_neg]
+
+    # w_pos = np.array(x_pos) * np.array(y_pos) if x_pos else np.array([])
+    # w_neg = np.abs(np.array(x_neg)) * np.array(y_neg) if x_neg else np.array([])
+
+    # cum_pos = np.cumsum(w_pos) if w_pos.size else np.array([])
+    # cum_neg = np.cumsum(w_neg) if w_neg.size else np.array([])
+
+    # if mode == "percent":
+    #     total = (w_pos.sum() if w_pos.size else 0.0) + (w_neg.sum() if w_neg.size else 0.0)
+    #     if total > 0:
+    #         if cum_pos.size: cum_pos = cum_pos / total * 100
+    #         if cum_neg.size: cum_neg = cum_neg / total * 100
+    #     right_ylabel = "累積百分比 (%)"
+    #     right_ylim = (0, 100)
+    # else:
+    #     right_ylabel = "累積數值"
+    #     max_c = max(float(cum_pos[-1]) if cum_pos.size else 0.0,
+    #                 float(cum_neg[-1]) if cum_neg.size else 0.0)
+    #     right_ylim = (0, max_c * 1.05 if max_c > 0 else 1)
+
+    # # 3) 畫圖（用左邊界 + align='edge'）
+    # fig, ax1 = plt.subplots(figsize=(10, 6))
+    # ax1.bar(left_edges, heights, width=bin_size, align='edge',
+    #         color="skyblue", edgecolor="black", label="出現次數")
+    # ax1.set_xlabel(f"數值 (每 {bin_size} 區間)")
+    # ax1.set_ylabel("出現次數", color="blue")
+    # ax1.tick_params(axis="y", labelcolor="blue")
+
+    # ax2 = ax1.twinx()
+    # if cum_pos.size:
+    #     ax2.plot(x_pos, cum_pos, color="red", marker="o", linewidth=2, label="正數累積")
+    # if cum_neg.size:
+    #     ax2.plot(x_neg, cum_neg, color="green", marker="s", linewidth=2, label="負數累積(絕對值)")
+
+    # ax2.set_ylabel(right_ylabel, color="red")
+    # ax2.tick_params(axis="y", labelcolor="red")
+    # ax2.set_ylim(*right_ylim)
+
+    # h1, l1 = ax1.get_legend_handles_labels()
+    # h2, l2 = ax2.get_legend_handles_labels()
+    # ax2.legend(h1 + h2, l1 + l2, loc="upper left")
+
+    # plt.title(name or f"每 {bin_size} 區間")
+    # plt.tight_layout()
+    # plt.show()
+    # plt.close(fig)  # 如果在迴圈內畫多張圖，記得關掉避免疊圖
+
     if accumulation_mode == "detail":
         raw_cnt = Counter(figure_1)
         raw_x = sorted(raw_cnt.keys())
@@ -230,7 +311,7 @@ def output_figure_1(name,mode="value",bin_size = 10,accumulation_mode=""):
     # plt.tight_layout()
     # plt.savefig(f"{folder}/{name}_1.png", dpi=300)
 
-def output_figure_2(name, mode="value", bin_size = 10, accumulation_mode=""):
+def output_figure_2(name, bin_size = 10, mode="value", accumulation_mode=""):
 
     if accumulation_mode == "detail":
         raw_cnt = Counter(figure_2)
@@ -290,7 +371,7 @@ def output_figure_2(name, mode="value", bin_size = 10, accumulation_mode=""):
         h2, l2 = ax2.get_legend_handles_labels()
         ax2.legend(h1 + h2, l1 + l2, loc="upper left")
 
-        plt.title(f"{name}_1（柱：每{bin_size}分箱；線：原始值累積）")
+        plt.title(f"{name}_2（柱：每{bin_size}分箱；線：原始值累積）")
         plt.tight_layout()
         plt.savefig(f"{folder}/{name}_2.png", dpi=300)
     else:
@@ -351,7 +432,7 @@ def output_figure_2(name, mode="value", bin_size = 10, accumulation_mode=""):
         handles2, labels2 = ax2.get_legend_handles_labels()
         ax2.legend(handles1 + handles2, labels1 + labels2, loc="upper left")
 
-        plt.title(f"{name}_1 (每 10 區間)")
+        plt.title(f"{name}_2 (每 10 區間)")
         plt.tight_layout()
         plt.savefig(f"{folder}/{name}_2.png", dpi=300)
 
@@ -598,16 +679,16 @@ def main():
             #     figure_1_w.append(now.iloc[2].漲跌價)
             # else:
             #     figure_1_l.append(now.iloc[2].漲跌價)
-            figure_1.append(strategy_1_w(now.iloc[2]))
-            figure_1.append(strategy_1_l(now.iloc[2]))
+            figure_1.append(strategy_1_w(now.iloc[2],"value"))
+            figure_1.append(strategy_1_l(now.iloc[2],"value"))
             # d = abs(int(strategy_2(now.iloc[2])))
             # if (d>1000):
             #     print(now.iloc[2].Date,now.iloc[2].Open,now.iloc[2].settle)
-            figure_2.append(strategy_2(now.iloc[2]))
+            figure_2.append(strategy_2(now.iloc[2],"value"))
             figure_3.append(abs(strategy_3(figure_1[-2],figure_1[-1])))
     a = []
     for i in figure_2:
-        a.append(int(i))
+        a.append(float(i))
     print(a)
     folder = Path(f"{folder}/{trend}")
     check_folder()
@@ -618,6 +699,6 @@ def main():
 
 if __name__ == '__main__':
     DefualtSet()
-    output_strategy_year()
+    # output_strategy_year()
     # output_all_strategy()
-    # main()
+    main()
