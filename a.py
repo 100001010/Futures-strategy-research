@@ -2,6 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from collections import Counter
 import numpy as np
+import os
 plt.rcParams["font.family"] = "Microsoft JhengHei"
 plt.rcParams['axes.unicode_minus'] = False
 
@@ -11,15 +12,21 @@ plt.rcParams['axes.unicode_minus'] = False
 #3.名子r21r212u(d)_1...(O)
 #4.做r11r112u(最少42次)
 #5.收盤價用結算價(O)
-#6.當天收盤價小於12000,開盤結算都乘1.5
+#6.當天結算價小於12000,開盤價結算價都乘1.5 (OX)//但最高價最低價也乘1.5
 #7.x改成%(最高價-開盤價)/開盤價(後做)
 #8.1,2張圖改一個區間10
 
 df = pd.read_csv("filtered_all_with_columns.csv")#daily_ohlcv
 df["Date"] = pd.to_datetime(df["Date"])
 
+def check_floder():
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+
 def DefualtSet():
-    global trend, go, figure_1, figure_2, figure_3
+    global trend, go, figure_1, figure_2, figure_3, folder
+    folder = "./strategy_output"
+    check_floder()
     trend = 'r11r112'
     go = 'u'
     figure_1 = []
@@ -27,13 +34,13 @@ def DefualtSet():
     figure_3 = []
 
 def strategy_1_w(df):
-    return df.High-df.Open
+    return (df.High-df.Open)*1.5 if df.settle <12000 else df.High-df.Open
 
 def strategy_1_l(df):
-    return df.Low-df.Open
+    return (df.Low-df.Open)*1.5 if df.settle <12000 else df.Low-df.Open
 
 def strategy_2(df):
-    return df.settle-df.Open
+    return (df.settle-df.Open)*1.5 if df.settle <12000 else df.settle-df.Open
 
 def strategy_3(a,b):
     return a/b
