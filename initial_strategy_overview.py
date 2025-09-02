@@ -133,7 +133,12 @@ for name, group in df.groupby('strategy_type'):
     ratio = (group['high'] - group['open']) / (group['open'] - group['low'])
     bins_ratio = ((ratio // 0.01) * 0.01).astype(float)
     counts_ratio = bins_ratio.value_counts().sort_index()
-    cumsum_ratio = counts_ratio[::-1].cumsum()
+    # cumsum_ratio = counts_ratio[::-1].cumsum()
+    bins = np.arange(0, 3,  0.01)
+    cumsum_ratio = counts_ratio.reindex(bins, fill_value=0)[::-1].cumsum()[::-1]
+
+
+    # ===========================================作圖==========================
 
     fig, (ax1, ax3, ax5) = plt.subplots(1, 3, figsize=(16, 9))
     ax2 = ax1.twinx()
@@ -187,8 +192,8 @@ for name, group in df.groupby('strategy_type'):
     ax6.legend(loc='upper right')
 
     plt.tight_layout()
-    # plt.savefig(f'picture/{name}.png')
-    plt.show()
+    plt.savefig(f'picture/{name}.png')
+    # plt.show()
 
 
 
