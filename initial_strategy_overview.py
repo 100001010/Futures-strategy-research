@@ -48,7 +48,7 @@ for name, group in df.groupby('strategy_type'):
 # 分組後，得到 high-open 的陣列，每十點統計一次畫出長條圖
 bin_size = 0.001
 bin_range = 0.015
-bins = np.arange(0, bin_range, bin_size)
+# bins = np.arange(0, bin_range, bin_size)
 tatal=0
 for name, group in df.groupby('strategy_type'):
     # if name != 'rlhrlhl':
@@ -60,7 +60,7 @@ for name, group in df.groupby('strategy_type'):
     # diff_high_open = diff_high_open.where(group['open'] >= 12000, diff_high_open * 1.5)
     bins_high_open = ((diff_high_open // bin_size) * bin_size)
     counts_high_open = bins_high_open.value_counts().sort_index()
-    # bins = np.arange(0, bin_range, bin_size)
+    bins = np.arange(0, bin_range, bin_size)
     cumsum_high_open = counts_high_open.reindex(bins, fill_value=0)[::-1].cumsum()[::-1]
     # cumsum_high_open = counts_high_open[::-1].cumsum()
     print(cumsum_high_open)
@@ -72,7 +72,7 @@ for name, group in df.groupby('strategy_type'):
     bins_open_low = ((diff_open_low // bin_size) * bin_size)
     counts_open_low = bins_open_low.value_counts().sort_index()
     # cumsum_open_low = counts_open_low[::-1].cumsum()
-    # bins = np.arange(0, bin_range, bin_size)
+    bins = np.arange(0, bin_range, bin_size)
     cumsum_open_low = counts_open_low.reindex(bins, fill_value=0)[::-1].cumsum()[::-1]
 
     # # 第一張圖：high-open, open-low
@@ -104,11 +104,13 @@ for name, group in df.groupby('strategy_type'):
     bins_settlement_open_positive = ((diff_settlement_open_positive // bin_size) * bin_size)
     counts_settlement_open_positive = bins_settlement_open_positive.value_counts().sort_index()
     # cumsum_settlement_open_positive = counts_settlement_open_positive[::-1].cumsum()
+    bins = np.arange(0, bin_range, bin_size)
     cumsum_settlement_open_positive = counts_settlement_open_positive.reindex(bins, fill_value=0)[::-1].cumsum()[::-1]
 
     bins_settlement_open_negative = ((diff_settlement_open_negative // bin_size) * bin_size)
     counts_settlement_open_negative = bins_settlement_open_negative.value_counts().sort_index()
     # cumsum_settlement_open_negative = counts_settlement_open_negative[::-1].cumsum()
+    bins = np.arange(0, bin_range, bin_size)
     cumsum_settlement_open_negative = counts_settlement_open_negative.reindex(bins, fill_value=0)[::-1].cumsum()[::-1]
 
     
@@ -131,10 +133,10 @@ for name, group in df.groupby('strategy_type'):
 
     # 第三張圖：統計 (high-open)/(open-low)
     ratio = (group['high'] - group['open']) / (group['open'] - group['low'])
-    bins_ratio = ((ratio // 0.01) * 0.01).astype(float)
+    bins_ratio = ((ratio // 0.05) * 0.05).astype(float)
     counts_ratio = bins_ratio.value_counts().sort_index()
     # cumsum_ratio = counts_ratio[::-1].cumsum()
-    bins = np.arange(0, 3,  0.01)
+    bins = np.arange(0, 4,  0.05)
     cumsum_ratio = counts_ratio.reindex(bins, fill_value=0)[::-1].cumsum()[::-1]
 
 
@@ -178,11 +180,14 @@ for name, group in df.groupby('strategy_type'):
     # 第三張圖：ratio bar & 累積折線（獨立右側y軸）
     ax6 = ax5.twinx()
     ax5.bar(counts_ratio.index, counts_ratio.values, width=0.01, color='purple', alpha=0.6, label='(High-Open)/(Open-Low)')
-    ax5.set_xlabel('(High-Open)/(Open-Low) (每0.01一組)')
+    ax5.set_xlabel('(High-Open)/(Open-Low)')
     ax5.set_ylabel('Count', color='black')
     ax5.legend(loc='upper left')
-    ax5.set_xticks(np.arange(0, 3, 0.25))
-    ax5.set_xlim(0, 3)
+    # x軸用log scale，刻度分布為0.5、1、2、4，並設置x軸範圍
+    ax5.set_xscale('log')
+    ax5.set_xticks([0.25,0.5, 1, 2, 4])
+    ax5.get_xaxis().set_major_formatter(plt.FuncFormatter(lambda x, _: f'{x:g}'))
+    ax5.set_xlim(0.25, 4.1)
 
     # 累積折線
     x_ratio = cumsum_ratio.index.to_list()
