@@ -32,7 +32,6 @@ def _session_sort_key_night(t: time) -> int:
     elif t <= time(5, 0):
         return (24 * 60) + m                  # 00:00 -> 1440
     else:
-        # 不在夜盤範圍，不應進來；保底
         return 10**9
 
 def _session_sort_key_allday(t: time) -> int:
@@ -55,22 +54,21 @@ def make_minutes(df_min):
         t = i.Time.time()
         d = i.Date  # pandas Timestamp
 
-        # --- Morning: 08:45 ~ 13:45 (當天) ---
+        # --- Morning: 08:45 ~ 13:45 ---
         if time(8, 45) <= t <= time(13, 45):
             key_m = d.strftime("%Y/%m/%d")
             all_day_minutes_morning.setdefault(key_m, []).append(i)
 
-        # --- Night: 15:00 ~ 次日 05:00 (掛到「隔日」) ---
+        # --- Night: 15:00 ~ 05:00 ---
         if t >= time(15, 0) or t <= time(5, 0):
             key_n = (d + timedelta(days=1)).strftime("%Y/%m/%d") if t >= time(15, 0) else d.strftime("%Y/%m/%d")
             all_day_minutes_night.setdefault(key_n, []).append(i)
 
-        # --- All-day: 15:00 ~ 次日 13:45 (掛到「隔日」) ---
+        # --- All-day: 15:00 ~ 13:45 ---
         if t >= time(15, 0) or t <= time(13, 45):
             key_a = (d + timedelta(days=1)).strftime("%Y/%m/%d") if t >= time(15, 0) else d.strftime("%Y/%m/%d")
             all_day_minutes.setdefault(key_a, []).append(i)
 
-    # 排序：Morning 直接按時間；Night/All-day 用會期排序鍵
     for k, rows in all_day_minutes_morning.items():
         rows.sort(key=lambda r: r.Time.time())
 
