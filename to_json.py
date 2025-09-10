@@ -5,7 +5,7 @@ from datetime import time, timedelta
 def get_csv():
     df_day = pd.read_csv("filtered_all_with_columns.csv")#daily_ohlcv
     df_day["Date"] = pd.to_datetime(df_day["Date"], format="%Y/%m/%d")
-    df_min = pd.read_csv("all_1_min.csv")
+    df_min = pd.read_csv("all_1_min.csv")#merge_1_min_csv.py
     df_min["Date"] = pd.to_datetime(df_min["Date"], format="%Y/%m/%d")
     df_min["Time"] = pd.to_datetime(df_min["Time"], format="%H:%M:%S")
     return df_day, df_min
@@ -89,24 +89,28 @@ def main(df_day, df_min):
     # return
     for i in df_day.itertuples(index=False):
         today = i.Date.strftime("%Y/%m/%d")
-        high = {'price': -float("inf"), 'time': ''}
-        low = {'price': float("inf"), 'time': ''}
+        # high = {'price': -float("inf"), 'time': ''}
+        # low = {'price': float("inf"), 'time': ''}
         js_today, js_morning, js_night={}, {}, {}
         if today in all_day_minutes:
             open_all_day=""
             close_all_day=""
             print(today)
             all_high, all_low = [], []
+            open = 0
             for k in all_day_minutes[today]:
                 if open_all_day == "":
-                    open_all_day = {'price': k.Open, 'time': k.Time.strftime("%H:%M")}
+                    open = k.Open
+                    high = {'price': open, 'delta_points':0, 'delta_rate':0, 'time': k.Time.strftime("%H:%M")}
+                    low = {'price': open, 'delta_points':0, 'delta_rate':0, 'time': k.Time.strftime("%H:%M")}
+                    open_all_day = {'price': k.Open, 'delta_points':0, 'delta_rate':0, 'time': k.Time.strftime("%H:%M")}
                 if k.High > high['price']:
-                    high = {'price': k.High, 'time': k.Time.strftime("%H:%M")}
+                    high = {'price': k.High, 'delta_points':k.High-open, 'delta_rate':(k.High-open)/open, 'time': k.Time.strftime("%H:%M")}
                     all_high.append(high)
                 if k.Low < low['price']:
-                    low = {'price': k.Low, 'time': k.Time.strftime("%H:%M")}
+                    low = {'price': k.Low, 'delta_points':k.Low-open, 'delta_rate':(k.Low-open)/open, 'time': k.Time.strftime("%H:%M")}
                     all_low.append(low)
-                close_all_day = {'price': k.Close, 'time': k.Time.strftime("%H:%M")}
+                close_all_day = {'price': k.Close, 'delta_points':k.Close-open, 'delta_rate':(k.Close-open)/open, 'time': k.Time.strftime("%H:%M")}
             js_today = {
                 "open":
                     open_all_day
@@ -127,21 +131,24 @@ def main(df_day, df_min):
                     all_low
             }
         if today in all_day_minutes_morning:
-            high = {'price': -float("inf"), 'time': ''}
-            low = {'price': float("inf"), 'time': ''}
             all_high, all_low = [], []
-            open_morning=""
-            close_morning=""
+            open = -1
             for k in all_day_minutes_morning[today]:
+                if open == -1:
+                    open = k.Open
+                    high = {'price': open, 'delta_points':0, 'delta_rate':0, 'time': k.Time.strftime("%H:%M")}
+                    low = {'price': open, 'delta_points':0, 'delta_rate':0, 'time': k.Time.strftime("%H:%M")}
                 if k.High > high['price']:
-                    high = {'price': k.High, 'time': k.Time.strftime("%H:%M")}
+                    high = {'price': k.High, 'delta_points':k.High-open, 'delta_rate':(k.High-open)/open, 'time': k.Time.strftime("%H:%M")}
                     all_high.append(high)
                 if k.Low < low['price']:
-                    low = {'price': k.Low, 'time': k.Time.strftime("%H:%M")}
+                    low = {'price': k.Low, 'delta_points':k.Low-open, 'delta_rate':(k.Low-open)/open, 'time': k.Time.strftime("%H:%M")}
                     all_low.append(low)
             js_morning = {
                 "open":{
                     "price":i.Open,
+                    'delta_points':0,
+                    'delta_rate':0,
                     "time": '08:45'
                 }
                 ,
@@ -153,6 +160,8 @@ def main(df_day, df_min):
                 ,
                 "close":{
                     "price":i.Close,
+                    'delta_points':k.Close-open,
+                    'delta_rate':(k.Close-open)/open,
                     "time": '13:45'
                 }
                 ,
@@ -163,21 +172,23 @@ def main(df_day, df_min):
                     all_low
             }
         if today in all_day_minutes_night:
-            high = {'price': -float("inf"), 'time': ''}
-            low = {'price': float("inf"), 'time': ''}
             all_high, all_low = [], []
             open_night=""
             close_night=""
+            open = -1
             for k in all_day_minutes_night[today]:
                 if open_night == "":
-                    open_night = {'price': k.Open, 'time': k.Time.strftime("%H:%M")}
+                    open = k.Open
+                    high = {'price': open, 'delta_points':0, 'delta_rate':0, 'time': k.Time.strftime("%H:%M")}
+                    low = {'price': open, 'delta_points':0, 'delta_rate':0, 'time': k.Time.strftime("%H:%M")}
+                    open_night = {'price': k.Open, 'delta_points':0, 'delta_rate':0, 'time': k.Time.strftime("%H:%M")}
                 if k.High > high['price']:
-                    high = {'price': k.High, 'time': k.Time.strftime("%H:%M")}
+                    high = {'price': k.High, 'delta_points':k.High-open, 'delta_rate':(k.High-open)/open, 'time': k.Time.strftime("%H:%M")}
                     all_high.append(high)
                 if k.Low < low['price']:
-                    low = {'price': k.Low, 'time': k.Time.strftime("%H:%M")}
+                    low = {'price': k.Low, 'delta_points':k.Low-open, 'delta_rate':(k.Low-open)/open, 'time': k.Time.strftime("%H:%M")}
                     all_low.append(low)
-                close_night = {'price': k.Close, 'time': k.Time.strftime("%H:%M")}
+                close_night = {'price': k.Close, 'delta_points':k.Close-open, 'delta_rate':(k.Close-open)/open, 'time': k.Time.strftime("%H:%M")}
             js_night = {
                 "open":
                     open_night

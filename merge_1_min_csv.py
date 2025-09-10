@@ -1,5 +1,6 @@
 import pandas as pd
 
+#https://crazyindicator.pixnet.net/blog/post/222323760
 files = ["TXF19980722~20001231(CrazyIndicator.pixnet.net).csv",
     "TXF20010101~20101231(CrazyIndicator.pixnet.net).csv",
     "TXF20110101_20201231(CrazyIndicator.pixnet.net).csv",
